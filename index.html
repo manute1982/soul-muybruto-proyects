@@ -34,9 +34,17 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'soul-agency-app';
-        const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // Configuración de Firebase proporcionada por el usuario
+        const firebaseConfig = {
+            apiKey: "AIzaSyAsI1K6ukfJie1c5D1p_pGXQv6F4mFIoSg",
+            authDomain: "soul-5b742.firebaseapp.com",
+            projectId: "soul-5b742",
+            storageBucket: "soul-5b742.firebasestorage.app",
+            messagingSenderId: "712886103290",
+            appId: "1:712886103290:web:de65db959c06d89d0aad43"
+        };
+
+        const currentAppId = 'soul-agency-app';
 
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         
@@ -83,6 +91,7 @@
             const [profile, setProfile] = useState(null);
             const [tasks, setTasks] = useState([]);
             const [loading, setLoading] = useState(true);
+            const [authError, setAuthError] = useState(null);
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [selectedTask, setSelectedTask] = useState(null);
             const [showUserPicker, setShowUserPicker] = useState(false);
@@ -91,10 +100,21 @@
 
             useEffect(() => {
                 const initAuth = async () => {
-                    if (initialToken) await auth.signInWithCustomToken(initialToken);
-                    else await auth.signInAnonymously();
+                    try {
+                        await auth.signInAnonymously();
+                    } catch (err) {
+                        console.error("Error de Firebase Auth:", err);
+                        // Si el error es admin-restricted, informamos al usuario
+                        if (err.code === 'auth/admin-restricted-operation') {
+                            setAuthError("El inicio de sesión anónimo está desactivado en la consola de Firebase.");
+                        }
+                        // Forzamos un perfil de invitado para permitir ver la UI
+                        setProfile({ name: "Invitado", role: "VISITANTE" });
+                        setLoading(false);
+                    }
                 };
                 initAuth();
+                
                 const unsubscribe = auth.onAuthStateChanged((u) => {
                     if (u) {
                         setUser(u);
@@ -105,258 +125,32 @@
                             const found = Object.values(USER_MAP).find(v => v.name === saved);
                             setProfile(found || { name: "Invitado", role: "VISITANTE" });
                         }
+                        setLoading(false);
                     }
-                    setLoading(false);
                 });
                 return () => unsubscribe();
             }, []);
 
             useEffect(() => {
-                if (!user) return;
+                if (!user && !profile) return;
                 const unsubscribe = db.collection('artifacts').doc(currentAppId).collection('public').doc('data').collection('tasks')
-                    .onSnapshot(snap => setTasks(snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))), err => console.error(err));
+                    .onSnapshot(snap => setTasks(snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))), err => {
+                        console.error("Error de Firestore:", err);
+                    });
                 return () => unsubscribe();
-            }, [user]);
+            }, [user, profile]);
 
-            const stats = useMemo(() => ({
-                total: tasks.filter(t => t.status !== 'Done').length,
-                review: tasks.filter(t => t.status === 'Review').length,
-                urgent: tasks.filter(t => {
-                    if (t.status === 'Done' || !t.deadline) return false;
-                    const diff = (new Date(t.deadline) - new Date()) / (1000 * 60 * 60);
-                    return diff > 0 && diff <= 72;
-                }).length
-            }), [tasks]);
-
-            const selectProfile = (p) => {
-                setProfile(p);
-                localStorage.setItem('soul_agency_user_name', p.name);
-                setShowUserPicker(false);
-            };
-
-            const createTask = async (e) => {
-                e.preventDefault();
-                const form = e.target;
-                const newTask = {
-                    title: form.title.value,
-                    description: form.description.value,
-                    client: form.client.value,
-                    deadline: form.deadline.value,
-                    assetUrl: form.assetUrl.value,
-                    formats: formFormats.filter(f => f.trim() !== ''),
-                    status: 'Backlog',
-                    createdAt: new Date().toISOString(),
-                    createdBy: profile.name,
-                    producer: 'Pendiente',
-                    logs: [{ user: profile.name, action: "creó el briefing", date: new Date().toISOString() }]
-                };
-                await db.collection('artifacts').doc(currentAppId).collection('public').doc('data').collection('tasks').add(newTask);
-                setIsModalOpen(false);
-                setFormFormats(['']);
-            };
-
-            const addFormatField = () => setFormFormats([...formFormats, '']);
-            const updateFormatValue = (index, val) => {
-                const updated = [...formFormats];
-                updated[index] = val;
-                setFormFormats(updated);
-            };
-
-            const deleteTask = async (id) => {
-                if (window.confirm("¿Seguro que quieres borrar este proyecto?")) {
-                    await db.collection('artifacts').doc(currentAppId).collection('public').doc('data').collection('tasks').doc(id).delete();
-                }
-            };
-
-            const updateStatus = async (id, newStatus, producer = null, comment = '') => {
-                const task = tasks.find(t => t.id === id);
-                const newLogs = [...(task.logs || [])];
-                let actionText = `movió a ${newStatus}`;
-                if (comment) actionText += `: "${comment}"`;
-                if (producer) actionText += ` (Asignado a ${producer})`;
-                newLogs.push({ user: profile.name, action: actionText, date: new Date().toISOString() });
-
-                const data = { status: newStatus, updatedAt: new Date().toISOString(), logs: newLogs };
-                if (producer) data.producer = producer;
-                await db.collection('artifacts').doc(currentAppId).collection('public').doc('data').collection('tasks').doc(id).update(data);
-                setActionModal({ show: false, type: null, task: null, comment: '' });
-            };
-
-            if (loading) return <div className="h-screen flex items-center justify-center font-black uppercase text-slate-300 italic animate-pulse">Cargando HQ...</div>;
+            if (loading) return <div className="h-screen flex flex-col items-center justify-center font-black uppercase text-slate-300 italic animate-pulse">
+                <Icon.SoulLogo />
+                <p className="mt-4">Iniciando HQ...</p>
+            </div>;
 
             return (
                 <div className="h-screen flex flex-col overflow-hidden">
-                    {/* BARRA DE NAVEGACIÓN FIJA */}
-                    <nav className="h-20 bg-white border-b flex justify-between items-center z-50 shrink-0 px-10 sticky-nav shadow-sm">
-                        <div className="flex items-center gap-5">
-                            <Icon.SoulLogo />
-                            <div>
-                                <h1 className="font-black text-sm tracking-tighter text-slate-800 uppercase leading-none">The Soul Agency X MuyBruto</h1>
-                                <p className="text-[8px] font-black uppercase tracking-[0.4em] text-blue-500 mt-1">HQ WORKFLOW</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setShowUserPicker(!showUserPicker)}>
-                                <div className="text-right">
-                                    <p className="text-[8px] font-black uppercase text-slate-400 mb-0.5">{profile?.role}</p>
-                                    <p className="text-xs font-black text-slate-800">{profile?.name} ▾</p>
-                                </div>
-                                <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-[10px] font-black text-white">{profile?.name?.[0]}</div>
-                            </div>
-                            {profile?.role === 'REVISOR' && (
-                                <button onClick={() => setIsModalOpen(true)} className="bg-black text-white px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center gap-2">
-                                    <Icon.Plus /> Nuevo Briefing
-                                </button>
-                            )}
-                        </div>
-                    </nav>
-
-                    {/* ZONA DE SCROLL GENERAL */}
-                    <div className="flex-1 overflow-y-auto custom-scroll">
-                        
-                        {/* CAJAS DE ESTADO: Se ocultan al bajar el scroll */}
-                        <div className="px-10 py-8 flex gap-6">
-                            <div className="flex-1 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm transition-transform hover:scale-[1.01]">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Activos</p>
-                                <h2 className="text-3xl font-black text-slate-800">{stats.total}</h2>
-                            </div>
-                            <div className="flex-1 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm transition-transform hover:scale-[1.01]">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">En Revisión</p>
-                                <h2 className="text-3xl font-black text-amber-500">{stats.review}</h2>
-                            </div>
-                            <div className="flex-1 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm transition-transform hover:scale-[1.01]">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Urgentes</p>
-                                <h2 className="text-3xl font-black text-red-500">{stats.urgent}</h2>
-                            </div>
-                        </div>
-
-                        {/* TABLERO KANBAN */}
-                        <div className="px-10 pb-12 flex gap-8 items-start overflow-x-auto custom-scroll min-h-[70vh]">
-                            {COLUMNS.map(col => (
-                                <div key={col.id} className={`${col.color} min-w-[340px] w-[340px] rounded-[3.5rem] border border-slate-200/50 flex flex-col p-7`}>
-                                    <div className="flex justify-between items-center mb-6 px-3">
-                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{col.label}</h3>
-                                        <span className="bg-white px-3 py-1 rounded-xl text-[9px] font-black text-slate-400 shadow-sm">{tasks.filter(t => t.status === col.id).length}</span>
-                                    </div>
-
-                                    {/* LISTA DE CARDS */}
-                                    <div className="space-y-5">
-                                        {tasks.filter(t => t.status === col.id).map(task => {
-                                            const urgent = !task.status.includes('Done') && task.deadline && (new Date(task.deadline) - new Date()) / (1000 * 60 * 60) <= 72;
-                                            return (
-                                                <div key={task.id} className={`bg-white p-6 rounded-[2.2rem] border shadow-sm group relative hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer ${urgent && task.status !== 'Done' ? 'ring-2 ring-red-100 border-red-200' : 'border-slate-100'}`} onClick={() => setSelectedTask(task)}>
-                                                    
-                                                    {/* BOTÓN ELIMINAR */}
-                                                    {(task.status === 'Backlog' || task.status === 'Done') && profile?.role === 'REVISOR' && (
-                                                        <button onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
-                                                            <Icon.Trash />
-                                                        </button>
-                                                    )}
-
-                                                    <div className="flex justify-between items-start mb-4 pr-6">
-                                                        <span className={`text-[8px] font-black px-2.5 py-1 rounded-lg uppercase ${urgent && task.status !== 'Done' ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                                            {urgent && task.status !== 'Done' ? 'Urgente' : 'Standard'}
-                                                        </span>
-                                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{task.client}</div>
-                                                    </div>
-
-                                                    <h4 className="font-black text-slate-800 text-sm mb-3 leading-tight uppercase">{task.title}</h4>
-                                                    
-                                                    <div className="flex flex-wrap gap-1.5 mb-5">
-                                                        {task.formats?.map((f, i) => <span key={i} className="text-[8px] font-black bg-slate-50 text-slate-500 px-2 py-1 rounded-md uppercase border border-slate-100">{f}</span>)}
-                                                    </div>
-
-                                                    <div className="flex justify-between items-center pt-4 border-t border-slate-50">
-                                                        <div className="flex items-center gap-1.5 text-slate-400 text-[9px] font-black">
-                                                            <Icon.Calendar /> {task.deadline || 'S/F'}
-                                                        </div>
-                                                        
-                                                        {/* ACCIONES DIRECTAS */}
-                                                        <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                                                            {task.status === 'Backlog' && profile?.name === 'Oscar' && (
-                                                                <div className="flex gap-1">
-                                                                    <button onClick={() => updateStatus(task.id, 'In Production', 'Oscar')} className="bg-slate-900 text-white px-2.5 py-1.5 rounded-lg text-[8px] font-black uppercase hover:bg-blue-600">A Oscar</button>
-                                                                    <button onClick={() => updateStatus(task.id, 'In Production', 'Pablo')} className="bg-slate-900 text-white px-2.5 py-1.5 rounded-lg text-[8px] font-black uppercase hover:bg-blue-600">A Pablo</button>
-                                                                    <button onClick={() => updateStatus(task.id, 'In Production', 'Externo')} className="bg-slate-900 text-white px-2.5 py-1.5 rounded-lg text-[8px] font-black uppercase hover:bg-blue-600">Externo</button>
-                                                                </div>
-                                                            )}
-                                                            {task.status === 'In Production' && (profile?.name === task.producer || profile?.name === 'Oscar') && (
-                                                                <button onClick={() => setActionModal({ show: true, type: 'SEND_REVIEW', task, comment: '' })} className="bg-amber-500 text-white px-4 py-1.5 rounded-lg text-[8px] font-black uppercase shadow-lg shadow-amber-100">Entregar</button>
-                                                            )}
-                                                            {task.status === 'Review' && profile?.role === 'REVISOR' && (
-                                                                <div className="flex gap-1">
-                                                                    <button onClick={() => setActionModal({ show: true, type: 'REJECT', task, comment: '' })} className="bg-red-50 text-red-500 px-2.5 py-1.5 rounded-lg text-[8px] font-black uppercase hover:bg-red-500 hover:text-white transition-colors">Ajustes</button>
-                                                                    <button onClick={() => updateStatus(task.id, 'Done', null, 'Aprobado')} className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[8px] font-black uppercase shadow-lg shadow-emerald-100">OK</button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* MODAL CREAR BRIEFING */}
-                    {isModalOpen && (
-                        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
-                            <form onSubmit={createTask} className="bg-white p-10 rounded-[3rem] w-full max-w-xl max-h-[90vh] overflow-y-auto custom-scroll border border-slate-100 shadow-2xl">
-                                <div className="flex justify-between items-center mb-8">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><Icon.Plus /></div>
-                                        <h2 className="text-2xl font-black text-slate-800 tracking-tighter uppercase">Nuevo Briefing</h2>
-                                    </div>
-                                    <button type="button" onClick={() => setIsModalOpen(false)} className="text-slate-300 hover:text-red-500 transition-colors"><Icon.X /></button>
-                                </div>
-                                
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-2 block ml-1">Título</label>
-                                        <input name="title" required className="w-full p-5 bg-slate-50 rounded-2xl font-bold text-sm outline-none border border-transparent focus:border-blue-100" placeholder="Nombre del proyecto..." />
-                                    </div>
-
-                                    <div>
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-2 block ml-1">Descripción / Brief</label>
-                                        <textarea name="description" className="w-full h-32 p-5 bg-slate-900 text-slate-200 rounded-2xl font-medium text-sm outline-none resize-none" placeholder="Explica qué necesitamos..." />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-2 block ml-1">Revisor</label>
-                                            <select name="client" className="w-full p-5 bg-slate-50 rounded-2xl font-black text-sm outline-none">
-                                                <option>Manu</option><option>Álvaro</option><option>Silvia</option><option>Virginia</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-2 block ml-1">Deadline</label>
-                                            <input name="deadline" type="date" required className="w-full p-5 bg-slate-50 rounded-2xl font-black text-sm outline-none" />
-                                        </div>
-                                    </div>
-
-                                    {/* LÍNEAS DE FORMATO RECUPERADAS */}
-                                    <div>
-                                        <div className="flex justify-between items-center mb-3 ml-1">
-                                            <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Materiales a incluir</label>
-                                            <button type="button" onClick={addFormatField} className="text-[8px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-md uppercase">+ Añadir Línea</button>
-                                        </div>
-                                        <div className="space-y-2">
-                                            {formFormats.map((fmt, idx) => (
-                                                <input key={idx} value={fmt} onChange={(e) => updateFormatValue(idx, e.target.value)} className="w-full p-4 bg-slate-50 rounded-xl text-xs font-bold border border-transparent focus:border-blue-100 outline-none" placeholder={`Ej: Master 16:9, Redimensionado 9:16...`} />
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-2 block ml-1">URL Recursos</label>
-                                        <input name="assetUrl" type="url" className="w-full p-5 bg-slate-50 rounded-2xl text-[10px] font-bold outline-none" placeholder="https://drive.google.com/..." />
-                                    </div>
-
-                                    <button type="submit" className="w-full bg-black text-white py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-blue-600 transition-all">Enviar Briefing</button>
-                                </div>
-                            </form>
+                    {/* AVISO DE ERROR DE CONFIGURACIÓN */}
+                    {authError && (
+                        <div className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest py-2 px-10 text-center animate-bounce">
+                            ⚠️ Error de Configuración: {authError} (Habilita 'Anonymous Auth' en Firebase Console)
                         </div>
                     )}
 
