@@ -1,38 +1,240 @@
-<!DOCTYPE html>
+
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Soul Agency x MuyBruto | HQ v2.0</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    
+    <title>The Soul Agency x MuyBruto - Project Manager</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #F1F5F9; }
-        .custom-scroll::-webkit-scrollbar { width: 6px; height: 8px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .kanban-column { min-height: calc(100vh - 380px); }
-        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); }
-        @keyframes subtle-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-        .animate-subtle { animation: subtle-bounce 3s infinite ease-in-out; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     </style>
 </head>
-<body class="overflow-hidden">
-    <div id="root"></div>
+<body class="bg-slate-50 min-h-screen flex flex-col antialiased">
 
-    <script type="text/babel">
+    <!-- HEADER PREMIUM -->
+    <header class="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between shadow-xs sticky top-0 z-40">
+        <div class="flex items-center gap-4">
+            <div class="bg-slate-900 text-white p-2.5 rounded-2xl transform -rotate-2 shadow-md flex items-center justify-center">
+                <i data-lucide="camera" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">The Soul Agency x MuyBruto</h1>
+                <p class="text-xs font-semibold tracking-wider text-slate-400 uppercase mt-0.5">PROJECT MANAGER</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
+                <i data-lucide="plus" class="w-4 h-4"></i> Nuevo Briefing
+            </button>
+            <div class="relative">
+                <select id="user-profile" onchange="selectProfile(this.value)" class="appearance-none bg-slate-900 text-white pl-4 pr-10 py-2.5 rounded-xl font-medium text-sm shadow-sm hover:bg-slate-800 transition-colors focus:outline-none cursor-pointer">
+                    <option value="Oscar">Oscar (Productor/Asignador)</option>
+                    <option value="Manu">Manu (Partner)</option>
+                    <option value="Virginia">Virginia (Partner)</option>
+                    <option value="Alvaro">Alvaro (Partner)</option>
+                    <option value="Silvia">Silvia (Partner)</option>
+                    <option value="Pablo">Pablo (Productor)</option>
+                    <option value="Externo">Externo (Productor)</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-white">
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 p-8 max-w-[1600px] w-full mx-auto flex flex-col gap-8">
+        
+        <!-- DASHBOARD RESUMEN -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Proyectos Activos</p>
+                    <h3 id="stat-total" class="text-3xl font-bold text-slate-900 mt-1">0</h3>
+                </div>
+                <div class="text-3xl">📁</div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500">En Revisión</p>
+                    <h3 id="stat-revision" class="text-3xl font-bold text-amber-600 mt-1">0</h3>
+                </div>
+                <div class="text-3xl">👀</div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Urgencias Críticas (72h)</p>
+                    <h3 id="stat-urgentes" class="text-3xl font-bold text-rose-600 mt-1">0</h3>
+                </div>
+                <div class="text-3xl">🚨</div>
+            </div>
+        </div>
+
+        <!-- NOTIFICACIONES DE ERROR SI LAS HUBIERA -->
+        <div id="error-banner" class="hidden bg-rose-50 border border-rose-200 rounded-2xl p-4 text-rose-800 text-sm flex items-center gap-3">
+            <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0"></i>
+            <span id="error-message"></span>
+        </div>
+
+        <!-- KANBAN BOARD -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 items-start">
+            
+            <!-- COLUMNA: BUZÓN -->
+            <div class="bg-blue-100/80 p-5 rounded-[2.5rem] border border-blue-200/60 flex flex-col max-h-[75vh]">
+                <div class="flex items-center justify-between mb-4 px-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                        <h2 class="font-bold text-slate-800 tracking-tight">Buzón de Entrada</h2>
+                    </div>
+                </div>
+                <div id="col-buzon" class="flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-1 flex-1 min-h-[150px]"></div>
+            </div>
+
+            <!-- COLUMNA: PRODUCCIÓN -->
+            <div class="bg-amber-100/80 p-5 rounded-[2.5rem] border border-amber-200/60 flex flex-col max-h-[75vh]">
+                <div class="flex items-center gap-2 mb-4 px-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    <h2 class="font-bold text-slate-800 tracking-tight">En Producción</h2>
+                </div>
+                <div id="col-produccion" class="flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-1 flex-1 min-h-[150px]"></div>
+            </div>
+
+            <!-- COLUMNA: REVISIÓN -->
+            <div class="bg-purple-100/80 p-5 rounded-[2.5rem] border border-purple-200/60 flex flex-col max-h-[75vh]">
+                <div class="flex items-center gap-2 mb-4 px-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+                    <h2 class="font-bold text-slate-800 tracking-tight">Revisión Partners</h2>
+                </div>
+                <div id="col-revision" class="flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-1 flex-1 min-h-[150px]"></div>
+            </div>
+
+            <!-- COLUMNA: COMPLETADO -->
+            <div class="bg-emerald-100/80 p-5 rounded-[2.5rem] border border-emerald-200/60 flex flex-col max-h-[75vh]">
+                <div class="flex items-center gap-2 mb-4 px-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                    <h2 class="font-bold text-slate-800 tracking-tight">Completado</h2>
+                </div>
+                <div id="col-completado" class="flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-1 flex-1 min-h-[150px]"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- MODAL: NUEVO BRIEFING -->
+    <div id="modal-briefing" class="fixed inset-0 bg-slate-950/40 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 w-full max-w-xl overflow-hidden transform scale-95 opacity-0 transition-all duration-300 flex flex-col max-h-[90vh]">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-900">Crear Nuevo Briefing</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="form-briefing" onsubmit="handleCreateProject(event)" class="p-8 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-5">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Nombre del Proyecto</label>
+                    <input type="text" id="brief-title" required placeholder="Ej: Campaña Lanzamiento Verano" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-slate-400 focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Objetivo del Briefing</label>
+                    <textarea id="brief-desc" required rows="3" placeholder="Describe brevemente la meta del proyecto..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-slate-400 focus:bg-white transition-all resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Formatos Necesarios</label>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="format-input" placeholder="Ej: Reel 9:16, Banner 1080x1080..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-slate-400 focus:bg-white transition-all">
+                        <button type="button" onclick="addFormatTag()" class="bg-slate-900 text-white px-4 rounded-xl font-medium text-sm hover:bg-slate-800 transition-colors flex items-center justify-center cursor-pointer">Añadir</button>
+                    </div>
+                    <div id="format-tags-container" class="flex flex-wrap gap-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl min-h-[50px]"></div>
+                </div>
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Fecha de Entrega</label>
+                        <input type="date" id="brief-deadline" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-slate-400 focus:bg-white transition-all">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Enlace a Google Drive</label>
+                    <input type="url" id="brief-drive" placeholder="https://drive.google.com/..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-slate-400 focus:bg-white transition-all">
+                </div>
+                <div class="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-2">
+                    <button type="button" onclick="closeModal()" class="px-5 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">Cancelar</button>
+                    <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md transition-colors cursor-pointer">Enviar a Buzón</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: DETALLE / FEEDBACK -->
+    <div id="modal-detail" class="fixed inset-0 bg-slate-950/40 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
+                <div>
+                    <span id="detail-priority" class="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md bg-white/20 mb-1.5 inline-block"></span>
+                    <h3 id="detail-title" class="text-xl font-bold tracking-tight"></h3>
+                </div>
+                <button onclick="closeDetailModal()" class="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-8 flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-6">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Objetivo del Brief</h4>
+                    <p id="detail-desc" class="text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100"></p>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Formatos Requeridos</h4>
+                    <div id="detail-formats" class="flex flex-wrap gap-1.5"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 border-y border-slate-100 py-4">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Fecha Límite</h4>
+                        <p id="detail-deadline" class="text-sm font-semibold text-slate-800 mt-1"></p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Productor Asignado</h4>
+                        <p id="detail-producer" class="text-sm font-semibold text-slate-800 mt-1"></p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Materiales / Entregables</h4>
+                    <div id="detail-drive"></div>
+                </div>
+                <div class="flex flex-col flex-1 min-h-[250px] pb-4">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Historial de Logs y Feedback</h4>
+                    <div id="detail-logs" class="flex-1 bg-slate-950 text-slate-100 rounded-2xl p-4 font-mono text-xs overflow-y-auto custom-scrollbar space-y-2 max-h-[300px]"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INVISIBLE PARA RECOGER NOTAS INTERMEDIAS -->
+    <div id="modal-notes" class="fixed inset-0 bg-slate-950/40 backdrop-blur-xs hidden items-center justify-center z-60 p-4">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 w-full max-w-md p-6">
+            <h4 id="notes-modal-title" class="text-base font-bold text-slate-900 mb-2">Añadir Nota Opcional</h4>
+            <p id="notes-modal-desc" class="text-xs text-slate-500 mb-4">Estas indicaciones se guardarán en el historial del proyecto.</p>
+            <textarea id="notes-textarea" rows="3" placeholder="Escribe aquí tus comentarios o déjalo en blanco si no es necesario..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:border-slate-400 focus:bg-white transition-all resize-none mb-4"></textarea>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeNotesModal(false)" class="px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">Omitir</button>
+                <button onclick="closeNotesModal(true)" class="px-4 py-2 text-xs font-semibold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">Guardar Nota</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // CONFIGURACIÓN DE TU PROYECTO SOUL
         const firebaseConfig = {
             apiKey: "AIzaSyAsI1K6ukfJie1c5D1p_pGXQv6F4mFIoSg",
             authDomain: "soul-5b742.firebaseapp.com",
@@ -42,400 +244,375 @@
             appId: "1:712886103290:web:de65db959c06d89d0aad43"
         };
 
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        const { useState, useEffect, useMemo } = React;
+        // VARIABLES GLOBALES DE CONTROL
+        let currentProfile = "Oscar";
+        let activeFormats = [];
+        let projectsData = [];
+        let activeDetailId = null;
+        let pendingStatusAction = null;
 
-        // COLORES CON MÁS CONTRASTE PARA LECTURA FÁCIL
-        const COLUMNS = [
-            { id: 'Backlog', label: 'Buzón / Briefing', color: 'bg-slate-200/80', textColor: 'text-slate-600' },
-            { id: 'In Production', label: 'En Producción', color: 'bg-blue-200/80', textColor: 'text-blue-700' },
-            { id: 'Review', label: 'Revisión Partners', color: 'bg-amber-200/80', textColor: 'text-amber-700' },
-            { id: 'Done', label: 'Completado', color: 'bg-emerald-200/80', textColor: 'text-emerald-700' }
-        ];
+        // INICIALIZACIÓN DE SESIÓN Y EVENTOS
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedProfile = localStorage.getItem('soul_profile');
+            if (savedProfile) {
+                currentProfile = savedProfile;
+                document.getElementById('user-profile').value = savedProfile;
+            }
+            lucide.createIcons();
+            listenToProjects();
+        });
 
-        const PRODUCTORES = ['Oscar', 'Pablo', 'Externo'];
-        const REVISORES = ['Manu', 'Álvaro', 'Silvia', 'Virginia'];
-        const TODOS_USUARIOS = ['Oscar', 'Pablo', 'Manu', 'Álvaro', 'Silvia', 'Virginia', 'Externo'];
-
-        const Icon = ({ name, size = 18, className = "" }) => {
-            useEffect(() => { lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} className={`${className}`} style={{ width: size, height: size }}></i>;
+        window.selectProfile = function(val) {
+            currentProfile = val;
+            localStorage.setItem('soul_profile', val);
+            renderDashboard(projectsData);
         };
 
-        const App = () => {
-            const [tasks, setTasks] = useState([]);
-            const [activeUser, setActiveUser] = useState(localStorage.getItem('soul_user') || 'Oscar');
-            const [isModalOpen, setIsModalOpen] = useState(false);
-            const [selectedTask, setSelectedTask] = useState(null);
-            const [rejectingTask, setRejectingTask] = useState(null);
-            const [rejectFeedback, setRejectFeedback] = useState('');
-            const [formatoLines, setFormatoLines] = useState(['']);
-            const [loading, setLoading] = useState(true);
+        // ESCUCHA EN TIEMPO REAL CON MANEJO DE ERRORES BLINDADO
+        function listenToProjects() {
+            const errorBanner = document.getElementById('error-banner');
+            const errorMessage = document.getElementById('error-message');
 
-            useEffect(() => {
-                localStorage.setItem('soul_user', activeUser);
-                const init = async () => {
-                    await auth.signInAnonymously();
-                    const unsubscribe = db.collection('tasks')
-                        .orderBy('createdAt', 'desc')
-                        .onSnapshot(snap => {
-                            setTasks(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                            setLoading(false);
-                        });
-                    return () => unsubscribe();
-                };
-                init();
-            }, [activeUser]);
+            onSnapshot(collection(db, "tasks"), (snapshot) => {
+                projectsData = [];
+                snapshot.forEach(doc => {
+                    projectsData.push({ id: doc.id, ...doc.data() });
+                });
+                
+                errorBanner.classList.add('hidden');
+                renderDashboard(projectsData);
+                if (activeDetailId) updateDetailModalLive();
+            }, (error) => {
+                console.error("Error en Firebase:", error);
+                errorMessage.innerHTML = `<strong>Error de conexión en Firebase:</strong> ${error.message}. Verifica que hayas creado la Base de Datos en Cloud Firestore.`;
+                errorBanner.classList.remove('hidden');
+            });
+        }
 
-            // ESTADÍSTICAS PARA EL DASHBOARD SUPERIOR
-            const stats = useMemo(() => {
-                const now = new Date();
-                return {
-                    total: tasks.filter(t => t.status !== 'Done').length,
-                    review: tasks.filter(t => t.status === 'Review').length,
-                    urgent: tasks.filter(t => {
-                        if (t.status === 'Done') return false;
-                        const diff = (new Date(t.deadline) - now) / (1000 * 60 * 60);
-                        return diff > 0 && diff < 72;
-                    }).length
-                };
-            }, [tasks]);
+        // CONTROLADORES DE MODALES
+        window.openModal = function() {
+            const m = document.getElementById('modal-briefing');
+            m.classList.replace('hidden', 'flex');
+            setTimeout(() => {
+                m.firstElementChild.classList.replace('scale-95', 'scale-100');
+                m.firstElementChild.classList.replace('opacity-0', 'opacity-100');
+            }, 10);
+            activeFormats = [];
+            document.getElementById('format-tags-container').innerHTML = '';
+        };
 
-            const createProject = async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const newTask = {
-                    title: formData.get('title'),
-                    description: formData.get('description'),
-                    client: formData.get('client'),
-                    producer: 'Pendiente',
-                    status: 'Backlog',
-                    formats: formatoLines.filter(f => f.trim() !== ''),
-                    deadline: formData.get('deadline'),
-                    assetUrl: formData.get('assetUrl') || '',
-                    comments: [],
-                    createdAt: new Date().toISOString()
-                };
-                await db.collection('tasks').add(newTask);
-                setIsModalOpen(false);
-                setFormatoLines(['']);
+        window.closeModal = function() {
+            const m = document.getElementById('modal-briefing');
+            m.firstElementChild.classList.replace('scale-100', 'scale-95');
+            m.firstElementChild.classList.replace('opacity-100', 'opacity-0');
+            setTimeout(() => m.classList.replace('flex', 'hidden'), 300);
+            document.getElementById('form-briefing').reset();
+        };
+
+        window.addFormatTag = function() {
+            const input = document.getElementById('format-input');
+            const val = input.value.trim();
+            if(val && !activeFormats.includes(val)) {
+                activeFormats.push(val);
+                renderFormatTags();
+                input.value = '';
+            }
+        };
+
+        function renderFormatTags() {
+            const container = document.getElementById('format-tags-container');
+            container.innerHTML = activeFormats.map((f, idx) => `
+                <span class="bg-slate-900 text-white text-xs font-medium px-2.5 py-1 rounded-lg flex items-center gap-1">
+                    ${f}
+                    <button type="button" onclick="removeFormatTag(${idx})" class="hover:text-rose-400 cursor-pointer">&times;</button>
+                </span>
+            `).join('');
+        }
+
+        window.removeFormatTag = function(idx) {
+            activeFormats.splice(idx, 1);
+            renderFormatTags();
+        };
+
+        // EVALUADOR AUTOMÁTICO DE URGENCIA (DENTRO DE LAS 72 HORAS)
+        function checkIsUrgent(deadlineStr) {
+            if (!deadlineStr) return false;
+            const deadline = new Date(deadlineStr);
+            const now = new Date();
+            const diffHours = (deadline - now) / (1000 * 60 * 60);
+            return diffHours > 0 && diffHours <= 72;
+        }
+
+        // OPERACIONES CRUD: CREAR PROYECTO
+        window.handleCreateProject = async function(e) {
+            e.preventDefault();
+            const dateObj = new Date();
+            const formattedDate = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+            
+            const newProject = {
+                title: document.getElementById('brief-title').value.trim(),
+                desc: document.getElementById('brief-desc').value.trim(),
+                formats: activeFormats.length > 0 ? activeFormats : ['Sin especificar'],
+                deadline: document.getElementById('brief-deadline').value,
+                driveUrl: document.getElementById('brief-drive').value.trim(),
+                status: 'Buzón',
+                createdBy: currentProfile,
+                producer: 'No asignado',
+                logs: [`[${formattedDate}] Brief creado por ${currentProfile}`],
+                createdAt: serverTimestamp()
             };
 
-            const updateStatus = async (taskId, newStatus, assignedProducer = null, feedback = null) => {
-                const updateData = { status: newStatus };
-                if (assignedProducer) updateData.producer = assignedProducer;
-                if (feedback) {
-                    const log = `[${new Date().toLocaleDateString()}] ${activeUser}: ${feedback}`;
-                    updateData.comments = firebase.firestore.FieldValue.arrayUnion(log);
+            try {
+                await addDoc(collection(db, "tasks"), newProject);
+                closeModal();
+            } catch (err) {
+                alert("Error al guardar en base de datos: " + err.message);
+            }
+        };
+
+        // PROCESADO DE CAMBIO DE ESTADO CON RECOGIDA DE NOTAS
+        window.promptStatusChange = function(id, nextStatus, assignedProducer = null) {
+            pendingStatusAction = { id, nextStatus, assignedProducer };
+            const notesModal = document.getElementById('modal-notes');
+            const notesTitle = document.getElementById('notes-modal-title');
+            const notesDesc = document.getElementById('notes-modal-desc');
+            document.getElementById('notes-textarea').value = '';
+
+            const project = projectsData.find(p => p.id === id);
+
+            if (nextStatus === 'Producción') {
+                if (project && project.status === 'Revisión') {
+                    notesTitle.innerText = "Devolver a Producción (Feedback de Ajustes)";
+                    notesDesc.innerText = "Indica detalladamente qué cambios se deben realizar en el diseño o vídeo.";
+                } else {
+                    notesTitle.innerText = `Asignar a Producción (${assignedProducer})`;
+                    notesDesc.innerText = `Indica cualquier instrucción o nota de diseño crítica para ${assignedProducer}.`;
                 }
-                await db.collection('tasks').doc(taskId).update(updateData);
-                setRejectingTask(null);
-                setRejectFeedback('');
-            };
+                notesModal.classList.replace('hidden', 'flex');
+            } else if (nextStatus === 'Revisión') {
+                notesTitle.innerText = "Enviar a Revisión (Notas de entrega)";
+                notesDesc.innerText = "Explica brevemente los cambios realizados o qué se debe validar.";
+                notesModal.classList.replace('hidden', 'flex');
+            } else {
+                executeStatusChange("");
+            }
+        };
 
-            const deleteTask = async (taskId) => {
-                if (window.confirm("¿Estás seguro de que quieres eliminar este proyecto permanentemente?")) {
-                    await db.collection('tasks').doc(taskId).delete();
+        window.closeNotesModal = function(save) {
+            const notesModal = document.getElementById('modal-notes');
+            notesModal.classList.replace('flex', 'hidden');
+            
+            if (!pendingStatusAction) return;
+
+            let noteText = "";
+            if (save) {
+                noteText = document.getElementById('notes-textarea').value.trim();
+            }
+            executeStatusChange(noteText);
+        };
+
+        async function executeStatusChange(additionalNote) {
+            if (!pendingStatusAction) return;
+            const { id, nextStatus, assignedProducer } = pendingStatusAction;
+            const project = projectsData.find(p => p.id === id);
+            if (!project) return;
+
+            const dateObj = new Date();
+            const formattedDate = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+            
+            let updatedLogs = [...(project.logs || [])];
+            let updatePayload = { status: nextStatus };
+
+            if (nextStatus === 'Producción') {
+                if (project.status === 'Revisión') {
+                    updatePayload.producer = project.producer || 'Pablo';
+                    let logMsg = `[${formattedDate}] ${currentProfile} solicitó ajustes en el proyecto`;
+                    if (additionalNote) logMsg += ` | Ajustes: "${additionalNote}"`;
+                    updatedLogs.push(logMsg);
+                } else {
+                    updatePayload.producer = assignedProducer;
+                    let logMsg = `[${formattedDate}] ${currentProfile} asignó el proyecto a ${assignedProducer}`;
+                    if (additionalNote) logMsg += ` | Nota: "${additionalNote}"`;
+                    updatedLogs.push(logMsg);
                 }
-            };
+            } else if (nextStatus === 'Revisión') {
+                let logMsg = `[${formattedDate}] ${currentProfile} completó la producción y envió a revisión`;
+                if (additionalNote) logMsg += ` | Nota: "${additionalNote}"`;
+                updatedLogs.push(logMsg);
+            } else if (nextStatus === 'Completado') {
+                updatedLogs.push(`[${formattedDate}] ${currentProfile} aprobó el proyecto definitivamente`);
+            }
 
-            const isUrgent = (date) => {
-                const diff = (new Date(date) - new Date()) / (1000 * 60 * 60);
-                return diff > 0 && diff < 72;
-            };
+            updatePayload.logs = updatedLogs;
 
-            if (loading) return <div className="h-screen flex flex-col items-center justify-center font-black uppercase tracking-widest text-slate-400 bg-slate-50">
-                <div className="w-12 h-12 border-4 border-slate-200 border-t-black rounded-full animate-spin mb-4"></div>
-                Cargando HQ...
-            </div>;
+            try {
+                await updateDoc(doc(db, "tasks", id), updatePayload);
+            } catch (err) {
+                alert("Error al actualizar estado: " + err.message);
+            } finally {
+                pendingStatusAction = null;
+            }
+        }
 
-            return (
-                <div className="h-screen flex flex-col overflow-hidden bg-[#F1F5F9]">
-                    {/* Header */}
-                    <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between z-50 shadow-sm">
-                        <div className="flex items-center gap-4">
-                            <div className="bg-black p-2.5 rounded-xl text-white shadow-lg transform -rotate-2 flex items-center justify-center">
-                                <Icon name="camera" size={20} />
-                            </div>
-                            <div>
-                                <h1 className="text-lg font-black text-slate-800 tracking-tighter leading-none uppercase">The Soul Agency x MuyBruto</h1>
-                                <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.3em] mt-1">PROYECT MANAGER</p>
-                            </div>
-                        </div>
+        window.deleteProject = async function(id) {
+            if(confirm("¿Estás completamente seguro de eliminar permanentemente este briefing?")) {
+                try {
+                    await deleteDoc(doc(db, "tasks", id));
+                } catch (err) {
+                    alert("Error al eliminar: " + err.message);
+                }
+            }
+        };
 
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-3 bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 shadow-inner">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Usuario:</span>
-                                <select 
-                                    value={activeUser} 
-                                    onChange={(e) => setActiveUser(e.target.value)}
-                                    className="bg-transparent text-xs font-black text-slate-800 focus:outline-none cursor-pointer"
-                                >
-                                    {TODOS_USUARIOS.map(u => <option key={u}>{u}</option>)}
-                                </select>
-                            </div>
-                            <button onClick={() => setIsModalOpen(true)} className="bg-black text-white px-6 py-3 rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-black/10 active:scale-95">
-                                <Icon name="plus" size={14} /> Nuevo Briefing
-                            </button>
-                        </div>
-                    </header>
+        // RENDERIZADO DEL ENTORNO VISUAL
+        function renderDashboard(data) {
+            const cols = { 'Buzón': [], 'Producción': [], 'Revisión': [], 'Completado': [] };
+            let countTotal = 0, countRevision = 0, countUrgente = 0;
 
-                    {/* DASHBOARD RESUMEN PORTADA (ESTILO 7 DE MAYO) */}
-                    <div className="grid grid-cols-3 gap-6 px-8 py-6">
-                        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 flex items-center gap-5">
-                            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl">🚀</div>
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Proyectos Activos</p>
-                                <p className="text-3xl font-black text-slate-800">{stats.total}</p>
-                            </div>
-                        </div>
-                        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 flex items-center gap-5">
-                            <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-3xl">👀</div>
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">En Revisión</p>
-                                <p className="text-3xl font-black text-slate-800">{stats.review}</p>
-                            </div>
-                        </div>
-                        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-red-100 flex items-center gap-5 ring-4 ring-red-50">
-                            <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-3xl animate-pulse">🔥</div>
-                            <div>
-                                <p className="text-[10px] font-black text-red-400 uppercase tracking-[0.2em]">Urgencias (&lt;72h)</p>
-                                <p className="text-3xl font-black text-red-600">{stats.urgent}</p>
-                            </div>
-                        </div>
-                    </div>
+            data.forEach(p => {
+                if (cols[p.status]) cols[p.status].push(p);
+                const urgent = p.status !== 'Completado' && checkIsUrgent(p.deadline);
+                
+                if (p.status !== 'Completado') countTotal++;
+                if (p.status === 'Revisión') countRevision++;
+                if (urgent) countUrgente++;
+            });
 
-                    {}
-                    <main className="flex-1 overflow-x-auto p-8 pt-2 flex gap-8 custom-scroll">
-                        {COLUMNS.map(col => (
-                            <div key={col.id} className={`flex-shrink-0 w-[340px] rounded-[2.5rem] ${col.color} p-6 border border-slate-300 shadow-inner flex flex-col kanban-column`}>
-                                <div className="flex items-center justify-between mb-6 px-2">
-                                    <h3 className={`text-[11px] font-black uppercase tracking-[0.25em] ${col.textColor}`}>{col.label}</h3>
-                                    <span className="bg-white/80 px-3 py-1 rounded-full text-[10px] font-black text-slate-600 shadow-sm border border-white">
-                                        {tasks.filter(t => t.status === col.id).length}
-                                    </span>
+            document.getElementById('stat-total').innerText = countTotal;
+            document.getElementById('stat-revision').innerText = countRevision;
+            document.getElementById('stat-urgentes').innerText = countUrgente;
+
+            Object.keys(cols).forEach(colName => {
+                const container = document.getElementById(`col-${colName.toLowerCase().replace('ó','o')}`);
+                container.innerHTML = cols[colName].map(p => {
+                    const isUrgente = p.status !== 'Completado' && checkIsUrgent(p.deadline);
+                    
+                    // Lógica de Permisos de Asignación y Botones de Acción
+                    let actionButton = '';
+                    if (p.status === 'Buzón') {
+                        if (currentProfile === 'Oscar') {
+                            actionButton = `
+                                <div class="mt-3 flex gap-1.5 flex-wrap">
+                                    <button onclick="event.stopPropagation(); window.promptStatusChange('${p.id}', 'Producción', 'Oscar')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-1 rounded-xl text-[10px] font-bold transition-all shadow-xs cursor-pointer">A Oscar</button>
+                                    <button onclick="event.stopPropagation(); window.promptStatusChange('${p.id}', 'Producción', 'Pablo')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-1 rounded-xl text-[10px] font-bold transition-all shadow-xs cursor-pointer">A Pablo</button>
+                                    <button onclick="event.stopPropagation(); window.promptStatusChange('${p.id}', 'Producción', 'Externo')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-1 rounded-xl text-[10px] font-bold transition-all shadow-xs cursor-pointer">Externo</button>
                                 </div>
-                                
-                                <div className="flex-1 overflow-y-auto custom-scroll space-y-5 pr-1 pb-4">
-                                    {tasks.filter(t => t.status === col.id).map(task => {
-                                        const urgent = isUrgent(task.deadline);
-                                        const canDelete = task.status === 'Backlog' || task.status === 'Done';
-                                        
-                                        return (
-                                            <div key={task.id} className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-md hover:shadow-xl transition-all group relative overflow-hidden animate-in fade-in slide-in-from-bottom-4">
-                                                {urgent && task.status !== 'Done' && <div className="absolute top-0 left-0 w-full h-1.5 bg-red-500 animate-pulse" />}
-                                                
-                                                {/* BOTÓN BORRAR RECUPERADO */}
-                                                {canDelete && (
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }}
-                                                        className="absolute top-4 right-4 w-7 h-7 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white z-10"
-                                                    >
-                                                        <Icon name="trash-2" size={14} />
-                                                    </button>
-                                                )}
+                            `;
+                        } else {
+                            actionButton = `<p class="text-[11px] text-blue-800/80 italic mt-3 text-center bg-blue-50 py-1.5 rounded-lg border border-blue-200/50">Esperando asignación de Oscar</p>`;
+                        }
+                    } else if (p.status === 'Producción') {
+                        // RESTRICCIÓN: Solo productores (Oscar, Pablo, Externo) pueden enviar a revisión
+                        const isProducer = ['Oscar', 'Pablo', 'Externo'].includes(currentProfile);
+                        if (isProducer) {
+                            actionButton = `<button onclick="event.stopPropagation(); window.promptStatusChange('${p.id}', 'Revisión')" class="w-full mt-3 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer">Enviar a Revisión Partners</button>`;
+                        } else {
+                            actionButton = `<p class="text-[11px] text-amber-800/80 italic mt-3 text-center bg-amber-50 py-1.5 rounded-lg border border-amber-200/50">En cola de producción de ${p.producer || 'Productor'}</p>`;
+                        }
+                    } else if (p.status === 'Revisión') {
+                        const isPartner = ['Manu', 'Virginia', 'Alvaro', 'Silvia'].includes(currentProfile);
+                        if (isPartner) {
+                            actionButton = `
+                                <div class="mt-3 flex gap-1.5">
+                                    <button onclick="event.stopPropagation(); window.promptStatusChange('${p.id}', 'Producción')" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer">Pedir Ajustes</button>
+                                    <button onclick="event.stopPropagation(); window.promptStatusChange('${p.id}', 'Completado')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer">Aprobar OK</button>
+                                </div>
+                            `;
+                        } else {
+                            actionButton = `<p class="text-[11px] text-purple-800/80 italic mt-3 text-center bg-purple-50 py-1.5 rounded-lg border border-purple-200/50">Esperando revisión de Partners</p>`;
+                        }
+                    }
 
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <span className={`text-[8px] font-black px-2.5 py-1 rounded-lg uppercase tracking-[0.15em] shadow-sm ${urgent && task.status !== 'Done' ? 'bg-red-600 text-white animate-subtle' : 'bg-slate-100 text-slate-500'}`}>
-                                                        {urgent && task.status !== 'Done' ? 'Prioridad Crítica' : 'Estandar'}
-                                                    </span>
-                                                </div>
+                    // Botón de borrado para Buzón y Completado (Llamada explícita a window.deleteProject)
+                    const showDelete = p.status === 'Buzón' || p.status === 'Completado';
+                    const deleteBtn = showDelete ? `
+                        <button onclick="event.stopPropagation(); window.deleteProject('${p.id}')" class="absolute top-3 right-3 text-rose-500 hover:text-rose-700 p-1.5 rounded-lg transition-colors cursor-pointer z-10 bg-slate-50 hover:bg-rose-50 shadow-xs">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    ` : '';
 
-                                                <h4 className="text-sm font-black text-slate-800 leading-tight mb-4 pr-6 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => setSelectedTask(task)}>
-                                                    {task.title}
-                                                </h4>
-
-                                                <div className="flex flex-wrap gap-1.5 mb-5">
-                                                    {task.formats?.slice(0,2).map((f, i) => (
-                                                        <span key={i} className="bg-slate-50 text-[8px] font-black text-slate-400 px-2 py-1 rounded-md border border-slate-200 uppercase">{f}</span>
-                                                    ))}
-                                                    {task.formats?.length > 2 && <span className="text-[8px] font-black text-slate-300 px-1">+{task.formats.length - 2}</span>}
-                                                </div>
-
-                                                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                                                    <div className={`flex items-center gap-1.5 text-[9px] font-black ${urgent && task.status !== 'Done' ? 'text-red-500' : 'text-slate-400'}`}>
-                                                        <Icon name="calendar" size={10} /> {task.deadline}
-                                                    </div>
-                                                    <div className="flex -space-x-2">
-                                                        <div className="w-7 h-7 rounded-lg bg-slate-900 border-2 border-white flex items-center justify-center text-[9px] font-black text-white" title={`Solicita: ${task.client}`}>{task.client?.[0]}</div>
-                                                        <div className={`w-7 h-7 rounded-lg border-2 border-white flex items-center justify-center text-[9px] font-black text-white ${task.producer === 'Pendiente' ? 'bg-slate-200 text-slate-400' : 'bg-blue-600 shadow-lg shadow-blue-100'}`}>{task.producer?.[0]}</div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Botones de acción contextuales con RESTRICCIÓN OSCAR */}
-                                                <div className="mt-5 space-y-2">
-                                                    {task.status === 'Backlog' && (
-                                                        activeUser === 'Oscar' ? (
-                                                            <div className="grid grid-cols-3 gap-1.5">
-                                                                {PRODUCTORES.map(p => (
-                                                                    <button key={p} onClick={() => updateStatus(task.id, 'In Production', p)} className="bg-slate-900 text-white text-[8px] font-black py-2 rounded-xl hover:bg-blue-600 transition-all uppercase shadow-lg shadow-black/10">A {p}</button>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <div className="bg-slate-50 py-2.5 rounded-xl border border-dashed border-slate-200 text-center">
-                                                                <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Esperando Asignación de Oscar</span>
-                                                            </div>
-                                                        )
-                                                    )}
-                                                    {task.status === 'In Production' && PRODUCTORES.includes(activeUser) && (
-                                                        <button onClick={() => updateStatus(task.id, 'Review')} className="w-full bg-blue-600 text-white text-[9px] font-black py-3 rounded-2xl uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all">Terminado - Enviar a Revisión</button>
-                                                    )}
-                                                    {task.status === 'Review' && REVISORES.includes(activeUser) && (
-                                                        <div className="flex gap-2">
-                                                            <button onClick={() => setRejectingTask(task)} className="flex-1 bg-red-50 text-red-600 border border-red-100 text-[9px] font-black py-3 rounded-2xl uppercase hover:bg-red-100">Ajustes</button>
-                                                            <button onClick={() => updateStatus(task.id, 'Done')} className="flex-1 bg-emerald-600 text-white text-[9px] font-black py-3 rounded-2xl uppercase shadow-xl shadow-emerald-200 hover:bg-emerald-700">Aprobar OK</button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                    return `
+                        <div onclick="openDetailModal('${p.id}')" class="group bg-white p-5 rounded-3xl border border-slate-200 shadow-xs hover:shadow-md transition-all relative cursor-pointer transform hover:-translate-y-0.5">
+                            ${deleteBtn}
+                            <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${isUrgente ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-100 text-slate-600'} mb-2.5">
+                                ${isUrgente ? '🚨 URGENTE' : 'Estándar'}
+                            </span>
+                            <h4 class="font-bold text-slate-900 leading-snug pr-6 group-hover:text-blue-600 transition-colors uppercase tracking-tight text-sm">${p.title}</h4>
+                            <div class="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 text-slate-500">
+                                <div class="flex items-center gap-1 text-xs font-medium">
+                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+                                    ${p.deadline ? new Date(p.deadline).toLocaleDateString('es-ES', {day:'numeric', month:'short'}) : 'S/D'}
+                                </div>
+                                <div class="flex items-center gap-1 text-xs font-semibold text-slate-700">
+                                    <i data-lucide="user" class="w-3.5 h-3.5 text-slate-400"></i>
+                                    ${p.status === 'Buzón' ? p.createdBy : p.producer}
                                 </div>
                             </div>
-                        ))}
-                    </main>
-
-                    {}
-                    {isModalOpen && (
-                        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-                            <form onSubmit={createProject} className="bg-white rounded-[3.5rem] w-full max-w-xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95">
-                                <div className="p-10 border-b border-slate-50 flex justify-between items-center">
-                                    <h2 className="text-2xl font-black text-slate-800 tracking-tighter uppercase">Nuevo Briefing</h2>
-                                    <button type="button" onClick={() => setIsModalOpen(false)} className="p-3 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors"><Icon name="x" size={24} /></button>
-                                </div>
-                                <div className="p-10 space-y-6 max-h-[60vh] overflow-y-auto custom-scroll">
-                                    <input name="title" required placeholder="Nombre del proyecto..." className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black focus:outline-none shadow-inner" />
-                                    <textarea name="description" placeholder="Objetivo del proyecto / Estética buscada / Referencias..." className="w-full h-28 bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-black focus:outline-none resize-none shadow-inner" />
-                                    
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Responsable Partner</label>
-                                            <select name="client" className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-black text-slate-700 focus:outline-none shadow-inner">
-                                                {REVISORES.map(u => <option key={u}>{u}</option>)}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-2 block">Fecha de Entrega</label>
-                                            <input name="deadline" type="date" required className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-black focus:outline-none shadow-inner" />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-3 block">Formatos Requeridos</label>
-                                        <div className="space-y-3">
-                                            {formatoLines.map((line, index) => (
-                                                <input key={index} value={line} onChange={(e) => {
-                                                    const newLines = [...formatoLines];
-                                                    newLines[index] = e.target.value;
-                                                    setFormatoLines(newLines);
-                                                }} placeholder="Ej: Reels 9:16 / Estático / Carrusel..." className="w-full bg-slate-50 border border-slate-100 rounded-xl px-5 py-3 text-xs font-bold shadow-inner" />
-                                            ))}
-                                            <button type="button" onClick={() => setFormatoLines([...formatoLines, ''])} className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-[10px] font-black text-slate-400 hover:border-black hover:text-black transition-all">+ AÑADIR FORMATO</button>
-                                        </div>
-                                    </div>
-
-                                    <input name="assetUrl" type="url" placeholder="Link a Carpeta de Recursos (Drive/Wetransfer)..." className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold shadow-inner" />
-                                </div>
-                                <div className="p-10 bg-slate-50">
-                                    <button type="submit" className="w-full bg-black text-white py-5 rounded-[2rem] text-xs font-black uppercase tracking-widest shadow-2xl hover:scale-[0.98] transition-transform shadow-black/20">Lanzar Orden a Producción</button>
-                                </div>
-                            </form>
+                            ${actionButton}
                         </div>
-                    )}
+                    `;
+                }).join('');
+            });
+            lucide.createIcons();
+        }
 
-                    {/* Detalle de Tarea (Full View) */}
-                    {selectedTask && (
-                        <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
-                            <div className="bg-white rounded-[3.5rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-12">
-                                <div className="p-10 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                                    <div>
-                                        <h2 className="text-3xl font-black text-slate-800 tracking-tighter leading-tight uppercase">{selectedTask.title}</h2>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase mt-2 tracking-widest">Documento Técnico del Proyecto</p>
-                                    </div>
-                                    <button onClick={() => setSelectedTask(null)} className="p-4 hover:bg-slate-200 rounded-full transition-all text-slate-400"><Icon name="x" size={28}/></button>
-                                </div>
-                                <div className="p-12 space-y-10 overflow-y-auto custom-scroll">
-                                    {selectedTask.description && (
-                                        <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-                                            <div className="absolute right-[-10px] bottom-[-10px] text-white/5 opacity-20 transform -rotate-12 group-hover:rotate-0 transition-transform"><Icon name="file-text" size={140} /></div>
-                                            <div className="flex items-center gap-3 mb-4 text-white/30 relative z-10">
-                                                <Icon name="target" size={16} />
-                                                <p className="text-[11px] font-black uppercase tracking-widest">Briefing de Producción</p>
-                                            </div>
-                                            <p className="text-sm font-medium leading-relaxed italic relative z-10">{selectedTask.description}</p>
-                                        </div>
-                                    )}
+        // CONTROL DEL MODAL DE DETALLE / LOGS
+        window.openDetailModal = function(id) {
+            activeDetailId = id;
+            updateDetailModalLive();
+            const m = document.getElementById('modal-detail');
+            m.classList.replace('hidden', 'flex');
+        };
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-slate-100 p-6 rounded-3xl border border-slate-200">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Solicitado por</p>
-                                            <p className="text-sm font-black text-slate-800 flex items-center gap-2"><Icon name="user" size={14} /> {selectedTask.client}</p>
-                                        </div>
-                                        <div className="bg-slate-100 p-6 rounded-3xl border border-slate-200">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Asignado a</p>
-                                            <p className="text-sm font-black text-slate-800 flex items-center gap-2"><Icon name="layout" size={14} /> {selectedTask.producer}</p>
-                                        </div>
-                                    </div>
+        window.closeDetailModal = function() {
+            document.getElementById('modal-detail').classList.replace('flex', 'hidden');
+            activeDetailId = null;
+        };
 
-                                    <div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase mb-4 ml-2">Formatos Finales</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {selectedTask.formats?.map((f, i) => (
-                                                <span key={i} className="bg-white px-5 py-2.5 rounded-2xl border border-slate-200 text-xs font-black shadow-sm uppercase">{f}</span>
-                                            ))}
-                                        </div>
-                                    </div>
+        function updateDetailModalLive() {
+            const p = projectsData.find(proj => proj.id === activeDetailId);
+            if (!p) { closeDetailModal(); return; }
 
-                                    {selectedTask.assetUrl && (
-                                        <a href={selectedTask.assetUrl} target="_blank" className="block w-full bg-blue-600 text-white py-5 rounded-[2rem] text-center text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-blue-200 flex items-center justify-center gap-3">
-                                            <Icon name="external-link" size={16} /> Ver Materiales de Trabajo
-                                        </a>
-                                    )}
+            const isUrgente = p.status !== 'Completado' && checkIsUrgent(p.deadline);
 
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2 mb-2 ml-2">
-                                            <Icon name="message-square" size={16} className="text-amber-500" />
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Historial de Feedback</span>
-                                        </div>
-                                        {selectedTask.comments && selectedTask.comments.length > 0 ? (
-                                            selectedTask.comments.map((c, i) => (
-                                                <div key={i} className="bg-amber-50 border border-amber-100 p-5 rounded-3xl text-[11px] font-bold text-slate-700 leading-relaxed italic relative pl-12">
-                                                    <div className="absolute left-4 top-5 text-amber-300"><Icon name="corner-down-right" size={18} /></div>
-                                                    {c}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className="text-[10px] font-black text-slate-300 italic text-center py-4 uppercase">Sin comentarios previos registrados</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+            document.getElementById('detail-title').innerText = p.title;
+            document.getElementById('detail-desc').innerText = p.desc || 'Sin descripción clara.';
+            document.getElementById('detail-deadline').innerText = p.deadline ? new Date(p.deadline).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'No definida';
+            document.getElementById('detail-producer').innerText = p.status === 'Buzón' ? `No asignado (Creado por ${p.createdBy})` : p.producer;
+            
+            const badge = document.getElementById('detail-priority');
+            badge.innerText = isUrgente ? '🚨 URGENTE' : 'ESTÁNDAR';
+            badge.className = `text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md mb-1.5 inline-block ${isUrgente ? 'bg-rose-600 text-white' : 'bg-white/20 text-white'}`;
 
-                    {/* Modal de Feedback Requerido */}
-                    {rejectingTask && (
-                        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-[120] p-4">
-                            <div className="bg-white rounded-[3.5rem] w-full max-w-md shadow-2xl p-10 border border-slate-200">
-                                <h2 className="text-2xl font-black text-red-600 mb-2 uppercase tracking-tighter">Feedback / Ajustes</h2>
-                                <p className="text-[10px] font-black text-slate-400 uppercase mb-8 tracking-widest">Instrucciones para el editor</p>
-                                <textarea value={rejectFeedback} onChange={(e) => setRejectFeedback(e.target.value)} placeholder="¿Qué hay que cambiar? Sé específico..." className="w-full h-44 bg-slate-50 border border-slate-100 rounded-3xl p-6 text-sm font-bold focus:ring-2 focus:ring-red-500 outline-none resize-none mb-8 shadow-inner" />
-                                <div className="flex gap-4">
-                                    <button onClick={() => setRejectingTask(null)} className="flex-1 py-4 text-xs font-black uppercase text-slate-400 hover:text-slate-600 transition-colors">Cancelar</button>
-                                    <button onClick={() => updateStatus(rejectingTask.id, 'In Production', null, rejectFeedback)} className="flex-[2] bg-red-600 text-white py-5 rounded-[2rem] text-xs font-black uppercase tracking-widest shadow-xl shadow-red-200 active:scale-95 transition-all">Devolver a Producción</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+            document.getElementById('detail-formats').innerHTML = (p.formats || []).map(f => `
+                <span class="bg-slate-100 text-slate-800 text-xs font-semibold px-3 py-1 rounded-xl border border-slate-200 uppercase">${f}</span>
+            `).join('');
+
+            // Renderizado del enlace de Google Drive
+            const driveContainer = document.getElementById('detail-drive');
+            if (p.driveUrl) {
+                driveContainer.innerHTML = `
+                    <a href="${p.driveUrl}" target="_blank" class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 px-4 py-2.5 rounded-xl text-xs font-semibold border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer">
+                        <i data-lucide="external-link" class="w-4 h-4"></i> Abrir Google Drive
+                    </a>
+                `;
+            } else {
+                driveContainer.innerHTML = `<span class="text-xs text-slate-400 italic">No se ha adjuntado ningún enlace</span>`;
+            }
+
+            const logBox = document.getElementById('detail-logs');
+            logBox.innerHTML = (p.logs || []).map(l => `
+                <div class="flex gap-2 items-start text-[11px] leading-relaxed">
+                    <span class="text-amber-500 flex-shrink-0">></span>
+                    <span class="text-slate-200">${l}</span>
                 </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+            `).join('');
+            setTimeout(() => logBox.scrollTop = logBox.scrollHeight, 50);
+            lucide.createIcons();
+        }
     </script>
 </body>
 </html>
